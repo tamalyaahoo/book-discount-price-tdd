@@ -48,4 +48,31 @@ class BookDiscountServiceTest {
         assertEquals(135.0, service.calculatePrice(items), 0.01);
     }
 
+    @Test
+    @DisplayName("Apply 20% discount for four different books")
+    void testFourDifferentBooks_20PercentDiscount() {
+        List<Book> items = List.of(
+                new Book("Clean Code", 1),
+                new Book("The Clean Coder", 1),
+                new Book("Clean Architecture", 1),
+                new Book("TDD", 1)
+        );
+
+        assertEquals(160.0, service.calculatePrice(items), 0.01);
+    }
+
+    @Test
+    @DisplayName("Apply 25% discount for all five different books")
+    void testAllFiveBooks_25PercentDiscount() {
+        List<Book> items = List.of(
+                new Book("Clean Code", 1),
+                new Book("The Clean Coder", 1),
+                new Book("Clean Architecture", 1),
+                new Book("TDD", 1),
+                new Book("Legacy Code", 1)
+        );
+
+        assertEquals(187.50, service.calculatePrice(items), 0.01);
+    }
+
 }
