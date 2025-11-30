@@ -2,6 +2,7 @@ package com.bnpp.kata.bookdiscount.app.service;
 
 import com.bnpp.kata.bookdiscount.app.exception.InvalidBookException;
 import com.bnpp.kata.bookdiscount.app.model.Book;
+import com.bnpp.kata.bookdiscount.app.model.BookPriceResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,14 +21,19 @@ public class BookDiscountService {
             5, 0.25
     );
 
-    public double calculatePrice(List<Book> bookList) {
+    public BookPriceResponse calculatePrice(List<Book> bookList) {
         this.validateBasket(bookList);
         Map<String, Integer> mergedBookQuantity  = mergeDuplicateTitles(bookList);
         List<Integer> sortedCounts = extractSortedCounts(mergedBookQuantity);
         if (sortedCounts.isEmpty()) {
             throw new InvalidBookException("Basket must contain at least one book with quantity > 0");
         }
-        return computeOptimalPrice(sortedCounts, new HashMap<>());
+        double optimalPrice = computeOptimalPrice(sortedCounts, new HashMap<>());
+        List<Book> mergedItems = mergedBookQuantity.entrySet()
+                .stream()
+                .map(entry -> new Book(entry.getKey(), entry.getValue()))
+                .toList();
+        return BookPriceResponse.builder().books(mergedItems).totalPrice(optimalPrice).build();
     }
 
     private void validateBasket(List<Book> items) {

@@ -40,4 +40,35 @@ class BookDiscountControllerTest {
 
     }
 
+    @Test
+    @DisplayName("POST /api/v1/book/price/calculate → returns 400 Bad Request when 'items' field is missing")
+    void testCalculatePriceEndpointValidationError() throws Exception {
+        String requestJson = """
+        {
+          "unknownField": "invalid"
+        }
+        """;
+        // missing items field
+        mockMvc.perform(post("/api/v1/book/price/calculate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/book/price/calculate → returns 400 Bad Request when quantity is negative")
+    void testCalculatePriceEndpointNegativeQuantity() throws Exception {
+        String requestJson = """
+        {
+          "bookList": [
+            { "title": "Clean Code", "quantity": -1 }
+          ]
+        }
+        """;
+        mockMvc.perform(post("/api/v1/book/price/calculate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
 }

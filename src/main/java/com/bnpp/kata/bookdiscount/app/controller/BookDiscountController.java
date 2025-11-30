@@ -21,10 +21,7 @@ public class BookDiscountController {
 
     @PostMapping("/calculate")
     public ResponseEntity<BookPriceResponse> calculatePrice(@RequestBody BookRequest request) {
-        double totalPrice = bookDiscountService.calculatePrice(request.getBookList());
-        return ResponseEntity.ok(BookPriceResponse.builder()
-                        .books(request.getBookList())
-                        .totalPrice(totalPrice)
-                        .build());
+        BookPriceResponse bookPriceResponse = bookDiscountService.calculatePrice(request.getBookList());
+        return ResponseEntity.ok(bookPriceResponse);
     }
 }
