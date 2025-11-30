@@ -4,10 +4,9 @@ import com.bnpp.kata.bookdiscount.app.exception.InvalidBookException;
 import com.bnpp.kata.bookdiscount.app.model.Book;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class BookDiscountService {
@@ -23,10 +22,12 @@ public class BookDiscountService {
 
     public double calculatePrice(List<Book> bookList) {
         this.validateBasket(bookList);
-        int bookCount = bookList.size();
-        double discount = DISCOUNTS.getOrDefault(bookCount, 0.0);
-        double totalPrice = bookCount * BOOK_PRICE * (1-discount);
-        return totalPrice;
+        Map<String, Integer> mergedBookQuantity  = mergeDuplicateTitles(bookList);
+        List<Integer> sortedCounts = extractSortedCounts(mergedBookQuantity);
+        if (sortedCounts.isEmpty()) {
+            throw new InvalidBookException("Basket must contain at least one book with quantity > 0");
+        }
+        return computeOptimalPrice(sortedCounts, new HashMap<>());
     }
 
     private void validateBasket(List<Book> items) {
@@ -75,4 +76,69 @@ public class BookDiscountService {
                 .orElseThrow(() ->
                         new InvalidBookException("Basket must contain at least one book with quantity > 0"));
     }
+
+    private Map<String, Integer> mergeDuplicateTitles(List<Book> items) {
+        return items.stream()
+                .collect(Collectors.toMap(
+                        item -> normalizeTitle(item.getTitle()),
+                        Book::getQuantity,
+                        Integer::sum
+                ));
+    }
+
+    private String normalizeTitle(String title) {
+        return title.trim().toLowerCase();
+    }
+
+    private List<Integer> extractSortedCounts(Map<String, Integer> merged) {
+        return merged.values().stream()
+                .filter(quantity -> quantity != null && quantity > 0)
+                .sorted(Comparator.reverseOrder())
+                .toList();
+    }
+
+    private double computeOptimalPrice(List<Integer> bookCounts, Map<String, Double> cache) {
+        List<Integer> normalized = normalizeCounts(bookCounts);
+        if (normalized.isEmpty()) {
+            return 0.0;
+        }
+        String key = normalized.toString();
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
+        double bestPrice = tryAllGroupSizes(normalized, cache);
+        cache.put(key, bestPrice);
+        return bestPrice;
+    }
+
+    private List<Integer> normalizeCounts(List<Integer> counts) {
+        return counts.stream()
+                .filter(count -> count > 0)
+                .sorted(Comparator.reverseOrder())
+                .toList();
+    }
+
+    private double tryAllGroupSizes(List<Integer> state, Map<String, Double> cache) {
+        int maxGroupSize = state.size();
+        return IntStream.rangeClosed(1, maxGroupSize)
+                .mapToDouble(size -> computeCostForGroup(size, state, cache))
+                .min()
+                .orElse(Double.MAX_VALUE);
+    }
+
+    private double computeCostForGroup(int groupSize, List<Integer> state, Map<String, Double> cache) {
+        List<Integer> newState = applyGroupSelection(state, groupSize);
+        double discount = DISCOUNTS.getOrDefault(groupSize, 0.0);
+        double groupCost = groupSize * BOOK_PRICE * (1 - discount);
+        double recursiveCost = computeOptimalPrice(newState, cache);
+        return groupCost + recursiveCost;
+    }
+
+    private List<Integer> applyGroupSelection(List<Integer> state, int groupSize) {
+        return IntStream.range(0, state.size())
+                .map(i -> i < groupSize ? state.get(i) - 1 : state.get(i))
+                .boxed()
+                .toList();
+    }
+
 }
