@@ -1,0 +1,30 @@
+package com.bnpp.kata.bookdiscount.app.service;
+
+import com.bnpp.kata.bookdiscount.app.model.Book;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class BookDiscountServiceTest {
+
+    private BookDiscountService service;
+
+    @BeforeEach
+    void setup(){
+        service = new BookDiscountService();
+    }
+
+    @Test
+    @DisplayName("Calculate price for a single book with no discount")
+    void testSingleBook_noDiscount() {
+        List<Book> items = List.of(
+                new Book("Clean Code", 1)
+        );
+        assertEquals(50.0, service.calculatePrice(items), 0.01);
+    }
+
+}
