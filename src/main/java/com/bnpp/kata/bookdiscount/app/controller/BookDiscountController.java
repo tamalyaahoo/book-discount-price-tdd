@@ -13,15 +13,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/book/price")
 public class BookDiscountController {
 
-    private BookDiscountService discountService;
+    private BookDiscountService bookDiscountService;
 
-    public BookDiscountController(BookDiscountService discountService) {
-        this.discountService = discountService;
+    public BookDiscountController(BookDiscountService bookDiscountService) {
+        this.bookDiscountService = bookDiscountService;
     }
 
     @PostMapping("/calculate")
     public ResponseEntity<BookPriceResponse> calculatePrice(@RequestBody BookRequest request) {
-        discountService.calculatePrice(request.getBookList());
-        return null;
+        double totalPrice = bookDiscountService.calculatePrice(request.getBookList());
+        return ResponseEntity.ok(BookPriceResponse.builder()
+                        .books(request.getBookList())
+                        .totalPrice(totalPrice)
+                        .build());
     }
 }
